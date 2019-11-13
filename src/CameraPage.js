@@ -4,10 +4,38 @@ import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 
 import styles from './styles';
+import Toolbar from './Toolbar';
+import Gallery from './Gallery';
 
 export default function CameraPage() {
   cam = null;
+  [captures, setCaptures] = useState([]);
+  [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
+  [capturing, setCapturing] = useState(null);
+  [cameraType, setCameraType] = useState(Camera.Constants.Type.back);
   [cameraPermission, setCameraPermission] = useState(null);
+
+
+  const handleCaptureIn = () => {
+  	setCapturing(true);
+  };
+
+  const handleCaptureOut = () => {
+    if (capturing)
+        cam.stopRecording();
+  };
+
+  const handleShortCapture = async () => {
+    const photoData = await cam.takePictureAsync();
+    setCapturing(false);
+    setCaptures([photoData, ...captures]);
+  };
+
+  const handleLongCapture = async () => {
+    const videoData = await cam.recordAsync();
+    setCapturing(false);
+    setCaptures([videoData, ...captures]);
+  };
 
   useEffect(() => {
 	  const componentDidMount = async () => {
@@ -24,12 +52,28 @@ export default function CameraPage() {
     return <Text>Access to camera has been denied.</Text>;
   }
   return (
-    <View>
-      <Camera
-        style={styles.preview}
-        ref={camera => cam = camera}
-      />
-    </View>
+  	<React.Fragment>
+	    <View>
+	      <Camera
+	        type={cameraType}
+	        flashMode={flashMode}
+	        style={styles.preview}
+	        ref={camera => cam = camera}
+	      />
+	    </View>
+	    {captures.length > 0 && <Gallery captures={captures}/>}
+	    <Toolbar 
+	      capturing={capturing}
+	      flashMode={flashMode}
+	      cameraType={cameraType}
+	      setFlashMode={setFlashMode}
+	      setCameraType={setCameraType}
+	      onCaptureIn={handleCaptureIn}
+	      onCaptureOut={handleCaptureOut}
+	      onLongCapture={handleLongCapture}
+	      onShortCapture={handleShortCapture}
+	  	/>
+	  </React.Fragment>
   );
 }
 
